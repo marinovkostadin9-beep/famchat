@@ -1,0 +1,34 @@
+[
+    {
+        "merged": "com.example.famchat.app-merged_res-57:/drawable_avatar_panda.xml.flat",
+        "source": "com.example.famchat.app-main-59:/drawable/avatar_panda.xml"
+    },
+    {
+        "merged": "com.example.famchat.app-merged_res-57:/drawable_avatar_rabbit.xml.flat",
+        "source": "com.example.famchat.app-main-59:/drawable/avatar_rabbit.xml"
+    },
+    {
+        "merged": "com.example.famchat.app-merged_res-57:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.famchat.app-main-59:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.example.famchat.app-merged_res-57:/drawable_avatar_bear.xml.flat",
+        "source": "com.example.famchat.app-main-59:/drawable/avatar_bear.xml"
+    },
+    {
+        "merged": "com.example.famchat.app-merged_res-57:/drawable_avatar_dog.xml.flat",
+        "source": "com.example.famchat.app-main-59:/drawable/avatar_dog.xml"
+    },
+    {
+        "merged": "com.example.famchat.app-merged_res-57:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.example.famchat.app-main-59:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.example.famchat.app-merged_res-57:/drawable_avatar_cat.xml.flat",
+        "source": "com.example.famchat.app-main-59:/drawable/avatar_cat.xml"
+    },
+    {
+        "merged": "com.example.famchat.app-merged_res-57:/drawable_avatar_fox.xml.flat",
+        "source": "com.example.famchat.app-main-59:/drawable/avatar_fox.xml"
+    }
+]
