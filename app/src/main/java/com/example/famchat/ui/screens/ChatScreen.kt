@@ -21,6 +21,7 @@ import com.example.famchat.data.FirebaseAuthManager
 import com.example.famchat.model.Message
 import com.example.famchat.ui.theme.PrimaryBlue
 import com.example.famchat.ui.theme.ChatBubbleOther
+import com.example.famchat.ui.theme.PrivatePink
 import com.example.famchat.ui.theme.TextSecondary
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -40,10 +41,14 @@ fun ChatScreen(
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     var messageText by remember { mutableStateOf("") }
     var myNickname by remember { mutableStateOf("") }
+    var chatType by remember { mutableStateOf("group") }
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         myNickname = authManager.getCurrentUserData()?.nickname ?: ""
+        db.collection("chats").document(chatId).get().addOnSuccessListener { doc ->
+            chatType = doc.getString("type") ?: "group"
+        }
     }
 
     DisposableEffect(chatId) {
@@ -123,7 +128,7 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             items(messages) { msg ->
-                MessageBubble(message = msg, isMine = msg.senderId == userId)
+                MessageBubble(message = msg, isMine = msg.senderId == userId, chatType = chatType)
             }
             item { Spacer(modifier = Modifier.height(8.dp)) }
         }
@@ -131,7 +136,7 @@ fun ChatScreen(
 }
 
 @Composable
-private fun MessageBubble(message: Message, isMine: Boolean) {
+private fun MessageBubble(message: Message, isMine: Boolean, chatType: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
@@ -140,7 +145,7 @@ private fun MessageBubble(message: Message, isMine: Boolean) {
             modifier = Modifier
                 .widthIn(max = 260.dp)
                 .background(
-                    color = if (isMine) PrimaryBlue else ChatBubbleOther,
+                    color = if (isMine) (if (chatType == "private") PrivatePink else PrimaryBlue) else ChatBubbleOther,
                     shape = MaterialTheme.shapes.large
                 )
                 .padding(horizontal = 14.dp, vertical = 8.dp)
