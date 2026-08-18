@@ -35,12 +35,12 @@ fun ChatListScreen(navController: NavController, authManager: FirebaseAuthManage
     DisposableEffect(userId) {
         val registration = db.collection("chats")
             .whereArrayContains("participants", userId)
-            .orderBy("lastMessageTime", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, _ ->
                 isLoading = false
                 if (snapshot != null) {
                     chats = snapshot.documents.mapNotNull { it.toObject(Chat::class.java) }
                         .filter { !it.deletedFor.contains(userId) }
+                        .sortedByDescending { it.lastMessageTime }
                 }
             }
         onDispose { registration.remove() }
