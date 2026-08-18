@@ -14,6 +14,7 @@ import com.example.famchat.navigation.Screen
 import com.example.famchat.ui.screens.ChatListScreen
 import com.example.famchat.ui.screens.ChatScreen
 import com.example.famchat.ui.screens.LoginScreen
+import com.example.famchat.ui.screens.NewChatScreen
 import com.example.famchat.ui.screens.RegisterScreen
 import com.example.famchat.ui.theme.FamChatTheme
 
@@ -33,6 +34,7 @@ fun FamChatApp(authManager: FirebaseAuthManager) {
         composable(Screen.Login.route) { LoginScreen(navController, authManager) }
         composable(Screen.Register.route) { RegisterScreen(navController, authManager) }
         composable(Screen.ChatList.route) { ChatListScreen(navController, authManager) }
+        composable(Screen.NewChat.route) { NewChatScreen(navController, authManager) }
         composable(
             route = Screen.Chat.route,
             arguments = listOf(

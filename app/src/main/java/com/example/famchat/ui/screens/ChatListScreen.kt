@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,6 +48,11 @@ fun ChatListScreen(navController: NavController, authManager: FirebaseAuthManage
     }
 
     Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = { navController.navigate(Screen.NewChat.route) }) {
+                Icon(Icons.Filled.Add, contentDescription = "Нов чат")
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text("FamChat", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
