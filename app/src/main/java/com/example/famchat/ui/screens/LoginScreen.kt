@@ -1,11 +1,15 @@
 package com.example.famchat.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Text
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -15,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.famchat.data.FirebaseAuthManager
 import com.example.famchat.navigation.Screen
+import com.example.famchat.ui.theme.BackgroundLight
 import com.example.famchat.ui.theme.PrimaryBlue
 import com.example.famchat.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
@@ -27,37 +32,53 @@ fun LoginScreen(navController: NavController, authManager: FirebaseAuthManager) 
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
+    val fieldColors = TextFieldDefaults.colors(
+        unfocusedContainerColor = BackgroundLight,
+        focusedContainerColor = BackgroundLight,
+        unfocusedIndicatorColor = Color.Transparent,
+        focusedIndicatorColor = Color.Transparent,
+        errorIndicatorColor = MaterialTheme.colorScheme.error
+    )
+
     Scaffold { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("💬", fontSize = 64.sp, modifier = Modifier.padding(bottom = 12.dp))
-            Text("FamChat", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue)
-            Text("Семеен чат", fontSize = 14.sp, color = TextSecondary, modifier = Modifier.padding(bottom = 40.dp))
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .background(PrimaryBlue, RoundedCornerShape(20.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("💬", fontSize = 32.sp)
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Text("FamChat", fontSize = 26.sp, fontWeight = FontWeight.Medium)
+            Text("Семеен чат", fontSize = 13.sp, color = TextSecondary, modifier = Modifier.padding(bottom = 36.dp))
 
-            OutlinedTextField(
+            TextField(
                 value = nickname, onValueChange = { nickname = it; errorMessage = null },
                 label = { Text("Никнейм") }, singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(), isError = errorMessage != null,
-                shape = MaterialTheme.shapes.large
+                shape = RoundedCornerShape(14.dp), colors = fieldColors
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+            TextField(
                 value = password, onValueChange = { password = it; errorMessage = null },
                 label = { Text("Парола") }, singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth(), isError = errorMessage != null,
-                shape = MaterialTheme.shapes.large
+                shape = RoundedCornerShape(14.dp), colors = fieldColors
             )
 
             if (errorMessage != null) {
                 Text(errorMessage!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
             }
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
@@ -72,15 +93,16 @@ fun LoginScreen(navController: NavController, authManager: FirebaseAuthManager) 
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp), enabled = !isLoading,
-                shape = MaterialTheme.shapes.large
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
-                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                else Text("Вход", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                else Text("Вход", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             TextButton(onClick = { navController.navigate(Screen.Register.route) }) {
-                Text("Нямаш акаунт? Регистрирай се", color = PrimaryBlue, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text("Нямаш акаунт? Регистрирай се", color = PrimaryBlue, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.weight(1f))
             Text("FamChat v1.0", fontSize = 10.sp, color = TextSecondary.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 16.dp))
