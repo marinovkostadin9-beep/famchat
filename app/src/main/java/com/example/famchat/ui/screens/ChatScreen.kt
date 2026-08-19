@@ -1,5 +1,6 @@
 package com.example.famchat.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,11 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.famchat.FAMILY_GROUP_ID
+import com.example.famchat.R
 import com.example.famchat.data.FirebaseAuthManager
 import com.example.famchat.model.Message
 import com.example.famchat.model.User
@@ -37,6 +41,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+private fun avatarResOrDefault(resId: Int): Int = if (resId != 0) resId else R.drawable.avatar_dog
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
@@ -51,6 +57,7 @@ fun ChatScreen(
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     var messageText by remember { mutableStateOf("") }
     var myNickname by remember { mutableStateOf("") }
+    var myAvatarResId by remember { mutableStateOf(0) }
     var chatType by remember { mutableStateOf("group") }
     var members by remember { mutableStateOf<List<User>>(emptyList()) }
     val listState = rememberLazyListState()
@@ -58,7 +65,9 @@ fun ChatScreen(
     val accentColor = if (chatType == "private") PrivatePink else PrimaryBlue
 
     LaunchedEffect(Unit) {
-        myNickname = authManager.getCurrentUserData()?.nickname ?: ""
+        val me = authManager.getCurrentUserData()
+        myNickname = me?.nickname ?: ""
+        myAvatarResId = me?.avatarResId ?: 0
         db.collection("chats").document(chatId).get().addOnSuccessListener { doc ->
             chatType = doc.getString("type") ?: "group"
         }
@@ -106,6 +115,7 @@ fun ChatScreen(
                 "chatId" to chatId,
                 "senderId" to userId,
                 "senderName" to myNickname,
+                "senderAvatarResId" to myAvatarResId,
                 "text" to text,
                 "timestamp" to now,
                 "type" to "text",
@@ -279,15 +289,12 @@ private fun MemberRail(members: List<User>, myUserId: String, onMemberClick: (Us
                     .then(if (!isMe) Modifier.clickable { onMemberClick(member) } else Modifier)
             ) {
                 Box {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(if (isMe) PrimaryBlue.copy(alpha = 0.15f) else PrivatePink.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("👤", fontSize = 18.sp)
-                    }
+                    Image(
+                        painter = painterResource(id = avatarResOrDefault(member.avatarResId)),
+                        contentDescription = member.nickname,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(38.dp).clip(CircleShape)
+                    )
                     Box(
                         modifier = Modifier
                             .size(10.dp)
@@ -312,11 +319,21 @@ private fun MemberRail(members: List<User>, myUserId: String, onMemberClick: (Us
 private fun MessageBubble(message: Message, isMine: Boolean, chatType: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom
     ) {
+        if (!isMine) {
+            Image(
+                painter = painterResource(id = avatarResOrDefault(message.senderAvatarResId)),
+                contentDescription = message.senderName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(26.dp).clip(CircleShape)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+        }
         Column(
             modifier = Modifier
-                .widthIn(max = 260.dp)
+                .widthIn(max = 240.dp)
                 .background(
                     color = if (isMine) (if (chatType == "private") PrivatePink else PrimaryBlue) else ChatBubbleOther,
                     shape = MaterialTheme.shapes.large

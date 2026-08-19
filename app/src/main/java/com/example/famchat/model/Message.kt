@@ -5,6 +5,7 @@ data class Message(
     val chatId: String = "",
     val senderId: String = "",
     val senderName: String = "",
+    val senderAvatarResId: Int = 0,
     val text: String = "",
     val timestamp: Long = 0L,
     val type: String = "text",
