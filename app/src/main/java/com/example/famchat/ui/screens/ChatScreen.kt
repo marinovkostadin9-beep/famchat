@@ -1,10 +1,12 @@
 package com.example.famchat.ui.screens
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -12,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -19,13 +22,20 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.famchat.data.FirebaseAuthManager
 import com.example.famchat.model.Message
-import com.example.famchat.ui.theme.PrimaryBlue
+import com.example.famchat.model.User
+import com.example.famchat.navigation.Screen
+import com.example.famchat.ui.theme.BackgroundLight
 import com.example.famchat.ui.theme.ChatBubbleOther
+import com.example.famchat.ui.theme.OnlineGreen
+import com.example.famchat.ui.theme.OfflineGray
+import com.example.famchat.ui.theme.PrimaryBlue
 import com.example.famchat.ui.theme.PrivatePink
 import com.example.famchat.ui.theme.TextSecondary
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+
+private const val FAMILY_GROUP_ID = "family_group"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +52,10 @@ fun ChatScreen(
     var messageText by remember { mutableStateOf("") }
     var myNickname by remember { mutableStateOf("") }
     var chatType by remember { mutableStateOf("group") }
+    var members by remember { mutableStateOf<List<User>>(emptyList()) }
     val listState = rememberLazyListState()
+    val isGroupChat = chatId == FAMILY_GROUP_ID
+    val accentColor = if (chatType == "private") PrivatePink else PrimaryBlue
 
     LaunchedEffect(Unit) {
         myNickname = authManager.getCurrentUserData()?.nickname ?: ""
@@ -51,10 +64,23 @@ fun ChatScreen(
         }
     }
 
+    DisposableEffect(isGroupChat) {
+        if (isGroupChat) {
+            val registration = db.collection("users").addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    members = snapshot.documents.mapNotNull { it.toObject(User::class.java) }
+                }
+            }
+            onDispose { registration.remove() }
+        } else {
+            onDispose { }
+        }
+    }
+
     DisposableEffect(chatId) {
         val registration = db.collection("chats").document(chatId)
             .collection("messages")
-            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot != null) {
                     messages = snapshot.documents.mapNotNull { it.toObject(Message::class.java) }
@@ -90,47 +116,169 @@ fun ChatScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(chatName, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = messageText,
-                    onValueChange = { messageText = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Съобщение...") },
-                    shape = MaterialTheme.shapes.extraLarge
+    fun openPrivateChat(other: User) {
+        scope.launch {
+            val pcId = if (userId < other.userId) "${userId}_${other.userId}" else "${other.userId}_${userId}"
+            val chatRef = db.collection("chats").document(pcId)
+            val doc = chatRef.get().await()
+            if (!doc.exists()) {
+                val now = System.currentTimeMillis()
+                chatRef.set(
+                    hashMapOf(
+                        "chatId" to pcId, "type" to "private", "name" to other.nickname,
+                        "participants" to listOf(userId, other.userId),
+                        "lastMessage" to "", "lastMessageTime" to now,
+                        "createdBy" to userId, "createdAt" to now,
+                        "deletedFor" to emptyList<String>()
+                    )
+                ).await()
+            }
+            navController.navigate(Screen.Chat.createRoute(pcId, other.nickname))
+        }
+    }
+
+    if (isGroupChat) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            MemberRail(members = members, myUserId = userId, onMemberClick = { openPrivateChat(it) })
+            Column(modifier = Modifier.weight(1f)) {
+                ChatHeaderBar(
+                    title = chatName,
+                    subtitle = "${members.size} членове",
+                    onBack = { navController.popBackStack() }
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = { sendMessage() }) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Изпрати", tint = PrimaryBlue)
-                }
+                MessageList(messages = messages, userId = userId, chatType = chatType, listState = listState, modifier = Modifier.weight(1f))
+                MessageInputBar(messageText, { messageText = it }, { sendMessage() }, accentColor)
             }
         }
-    ) { padding ->
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+    } else {
+        Column(modifier = Modifier.fillMaxSize()) {
+            ChatHeaderBar(title = chatName, subtitle = null, onBack = { navController.popBackStack() })
+            MessageList(messages = messages, userId = userId, chatType = chatType, listState = listState, modifier = Modifier.weight(1f))
+            MessageInputBar(messageText, { messageText = it }, { sendMessage() }, accentColor)
+        }
+    }
+}
+
+@Composable
+private fun ChatHeaderBar(title: String, subtitle: String?, onBack: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 8.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+        }
+        Column {
+            Text(title, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+            if (subtitle != null) Text(subtitle, fontSize = 11.sp, color = TextSecondary)
+        }
+    }
+    Divider(color = Color(0xFFE2E8F0), thickness = 0.5.dp)
+}
+
+@Composable
+private fun MessageList(
+    messages: List<Message>,
+    userId: String,
+    chatType: String,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        state = listState,
+        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        item { Spacer(modifier = Modifier.height(4.dp)) }
+        items(messages) { msg ->
+            MessageBubble(message = msg, isMine = msg.senderId == userId, chatType = chatType)
+        }
+        item { Spacer(modifier = Modifier.height(8.dp)) }
+    }
+}
+
+@Composable
+private fun MessageInputBar(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSend: () -> Unit,
+    accentColor: Color
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.weight(1f),
+            placeholder = { Text("Напиши съобщение...") },
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = TextFieldDefaults.colors(
+                unfocusedContainerColor = BackgroundLight,
+                focusedContainerColor = BackgroundLight,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent
+            )
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(accentColor)
+                .clickable(onClick = onSend),
+            contentAlignment = Alignment.Center
         ) {
-            items(messages) { msg ->
-                MessageBubble(message = msg, isMine = msg.senderId == userId, chatType = chatType)
+            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Изпрати", tint = Color.White, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun MemberRail(members: List<User>, myUserId: String, onMemberClick: (User) -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(60.dp)
+            .fillMaxHeight()
+            .background(Color(0xFFF8FAFC))
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        members.forEach { member ->
+            val isMe = member.userId == myUserId
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .then(if (!isMe) Modifier.clickable { onMemberClick(member) } else Modifier)
+            ) {
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(if (isMe) PrimaryBlue.copy(alpha = 0.15f) else PrivatePink.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("👤", fontSize = 18.sp)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .align(Alignment.BottomEnd)
+                            .clip(CircleShape)
+                            .background(if (member.isOnline) OnlineGreen else OfflineGray)
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    if (isMe) "Ти" else member.nickname,
+                    fontSize = 9.sp,
+                    color = TextSecondary,
+                    maxLines = 1
+                )
             }
-            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
 }

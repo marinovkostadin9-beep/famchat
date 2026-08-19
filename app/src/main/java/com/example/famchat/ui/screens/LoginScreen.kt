@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Text
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +21,7 @@ import com.example.famchat.navigation.Screen
 import com.example.famchat.ui.theme.BackgroundLight
 import com.example.famchat.ui.theme.PrimaryBlue
 import com.example.famchat.ui.theme.TextSecondary
+
 import kotlinx.coroutines.launch
 
 @Composable
@@ -41,71 +41,80 @@ fun LoginScreen(navController: NavController, authManager: FirebaseAuthManager) 
     )
 
     Scaffold { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .background(PrimaryBlue, RoundedCornerShape(20.dp)),
-                contentAlignment = Alignment.Center
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Text("💬", fontSize = 32.sp)
-            }
-            Spacer(modifier = Modifier.height(14.dp))
-            Text("FamChat", fontSize = 26.sp, fontWeight = FontWeight.Medium)
-            Text("Семеен чат", fontSize = 13.sp, color = TextSecondary, modifier = Modifier.padding(bottom = 36.dp))
-
-            TextField(
-                value = nickname, onValueChange = { nickname = it; errorMessage = null },
-                label = { Text("Никнейм") }, singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(), isError = errorMessage != null,
-                shape = RoundedCornerShape(14.dp), colors = fieldColors
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            TextField(
-                value = password, onValueChange = { password = it; errorMessage = null },
-                label = { Text("Парола") }, singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                modifier = Modifier.fillMaxWidth(), isError = errorMessage != null,
-                shape = RoundedCornerShape(14.dp), colors = fieldColors
-            )
-
-            if (errorMessage != null) {
-                Text(errorMessage!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    if (nickname.length < 5) { errorMessage = "Никнеймът трябва да е минимум 5 символа"; return@Button }
-                    if (password.isBlank()) { errorMessage = "Въведи парола"; return@Button }
-                    isLoading = true
-                    scope.launch {
-                        authManager.login(nickname, password).onSuccess {
-                            navController.navigate(Screen.ChatList.route) { popUpTo(Screen.Login.route) { inclusive = true } }
-                        }.onFailure { errorMessage = it.message ?: "Грешка при вход" }
-                        isLoading = false
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(PrimaryBlue, RoundedCornerShape(20.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("💬", fontSize = 28.sp)
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp), enabled = !isLoading,
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-            ) {
-                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
-                else Text("Вход", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
-            }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("FamChat", fontSize = 22.sp, fontWeight = FontWeight.Medium)
+                    Text("Семеен чат", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(bottom = 24.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
-            TextButton(onClick = { navController.navigate(Screen.Register.route) }) {
-                Text("Нямаш акаунт? Регистрирай се", color = PrimaryBlue, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    TextField(
+                        value = nickname, onValueChange = { nickname = it; errorMessage = null },
+                        placeholder = { Text("Никнейм") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth(), isError = errorMessage != null,
+                        shape = RoundedCornerShape(14.dp), colors = fieldColors
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    TextField(
+                        value = password, onValueChange = { password = it; errorMessage = null },
+                        placeholder = { Text("Парола") }, singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        modifier = Modifier.fillMaxWidth(), isError = errorMessage != null,
+                        shape = RoundedCornerShape(14.dp), colors = fieldColors
+                    )
+
+                    if (errorMessage != null) {
+                        Text(errorMessage!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = {
+                            if (nickname.length < 5) { errorMessage = "Никнеймът трябва да е минимум 5 символа"; return@Button }
+                            if (password.isBlank()) { errorMessage = "Въведи парола"; return@Button }
+                            isLoading = true
+                            scope.launch {
+                                authManager.login(nickname, password).onSuccess {
+                                    navController.navigate(Screen.ChatList.route) { popUpTo(Screen.Login.route) { inclusive = true } }
+                                }.onFailure { errorMessage = it.message ?: "Грешка при вход" }
+                                isLoading = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(50.dp), enabled = !isLoading,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                    ) {
+                        if (isLoading) CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
+                        else Text("Вход", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    TextButton(onClick = { navController.navigate(Screen.Register.route) }) {
+                        Text("Нямаш акаунт? Регистрирай се", color = PrimaryBlue, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Text("FamChat v1.0", fontSize = 10.sp, color = TextSecondary.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 16.dp))
         }
     }
 }
