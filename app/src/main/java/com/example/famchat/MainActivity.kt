@@ -3,6 +3,8 @@ package com.example.famchat
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -18,6 +20,9 @@ import com.example.famchat.ui.screens.NewChatScreen
 import com.example.famchat.ui.screens.RegisterScreen
 import com.example.famchat.ui.theme.FamChatTheme
 
+const val FAMILY_GROUP_ID = "family_group"
+const val FAMILY_GROUP_NAME = "Семеен чат"
+
 class MainActivity : ComponentActivity() {
     private val authManager = FirebaseAuthManager()
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,8 +34,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun FamChatApp(authManager: FirebaseAuthManager) {
     val navController = rememberNavController()
-    val start = if (authManager.currentUser != null) Screen.ChatList.route else Screen.Login.route
-    NavHost(navController, start) {
+    val start = if (authManager.currentUser != null) {
+        Screen.Chat.createRoute(FAMILY_GROUP_ID, FAMILY_GROUP_NAME)
+    } else {
+        Screen.Login.route
+    }
+    NavHost(
+        navController,
+        start,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None }
+    ) {
         composable(Screen.Login.route) { LoginScreen(navController, authManager) }
         composable(Screen.Register.route) { RegisterScreen(navController, authManager) }
         composable(Screen.ChatList.route) { ChatListScreen(navController, authManager) }

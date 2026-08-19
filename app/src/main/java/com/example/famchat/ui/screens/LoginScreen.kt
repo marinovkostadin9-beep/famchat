@@ -96,7 +96,7 @@ fun LoginScreen(navController: NavController, authManager: FirebaseAuthManager) 
                             isLoading = true
                             scope.launch {
                                 authManager.login(nickname, password).onSuccess {
-                                    navController.navigate(Screen.ChatList.route) { popUpTo(Screen.Login.route) { inclusive = true } }
+                                    navController.navigate(Screen.Chat.createRoute(com.example.famchat.FAMILY_GROUP_ID, com.example.famchat.FAMILY_GROUP_NAME)) { popUpTo(Screen.Login.route) { inclusive = true } }
                                 }.onFailure { errorMessage = it.message ?: "Грешка при вход" }
                                 isLoading = false
                             }

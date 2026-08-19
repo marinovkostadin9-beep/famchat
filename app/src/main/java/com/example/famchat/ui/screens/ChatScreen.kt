@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.famchat.FAMILY_GROUP_ID
 import com.example.famchat.data.FirebaseAuthManager
 import com.example.famchat.model.Message
 import com.example.famchat.model.User
@@ -34,8 +36,6 @@ import com.example.famchat.ui.theme.TextSecondary
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
-private const val FAMILY_GROUP_ID = "family_group"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,43 +137,68 @@ fun ChatScreen(
         }
     }
 
-    if (isGroupChat) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            MemberRail(members = members, myUserId = userId, onMemberClick = { openPrivateChat(it) })
-            Column(modifier = Modifier.weight(1f)) {
-                ChatHeaderBar(
-                    title = chatName,
-                    subtitle = "${members.size} членове",
-                    onBack = { navController.popBackStack() }
-                )
-                MessageList(messages = messages, userId = userId, chatType = chatType, listState = listState, modifier = Modifier.weight(1f))
-                MessageInputBar(messageText, { messageText = it }, { sendMessage() }, accentColor)
+    fun logout() {
+        scope.launch {
+            authManager.logout()
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
             }
         }
-    } else {
-        Column(modifier = Modifier.fillMaxSize()) {
-            ChatHeaderBar(title = chatName, subtitle = null, onBack = { navController.popBackStack() })
-            MessageList(messages = messages, userId = userId, chatType = chatType, listState = listState, modifier = Modifier.weight(1f))
-            MessageInputBar(messageText, { messageText = it }, { sendMessage() }, accentColor)
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        ChatHeaderBar(
+            title = chatName,
+            subtitle = if (isGroupChat) "${members.size} членове" else null,
+            showBack = !isGroupChat,
+            onBack = { navController.popBackStack() },
+            onLogout = if (isGroupChat) { { logout() } } else null
+        )
+        Row(modifier = Modifier.weight(1f)) {
+            if (isGroupChat) {
+                MemberRail(members = members, myUserId = userId, onMemberClick = { openPrivateChat(it) })
+            }
+            MessageList(
+                messages = messages, userId = userId, chatType = chatType,
+                listState = listState, modifier = Modifier.weight(1f).fillMaxHeight()
+            )
         }
+        MessageInputBar(messageText, { messageText = it }, { sendMessage() }, accentColor)
     }
 }
 
 @Composable
-private fun ChatHeaderBar(title: String, subtitle: String?, onBack: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 8.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+private fun ChatHeaderBar(
+    title: String,
+    subtitle: String?,
+    showBack: Boolean,
+    onBack: () -> Unit,
+    onLogout: (() -> Unit)?
+) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 8.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (showBack) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                }
+            } else {
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+                if (subtitle != null) Text(subtitle, fontSize = 11.sp, color = TextSecondary)
+            }
+            if (onLogout != null) {
+                IconButton(onClick = onLogout) {
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Изход")
+                }
+            }
         }
-        Column {
-            Text(title, fontWeight = FontWeight.Medium, fontSize = 16.sp)
-            if (subtitle != null) Text(subtitle, fontSize = 11.sp, color = TextSecondary)
-        }
+        Divider(color = Color(0xFFE2E8F0), thickness = 0.5.dp)
     }
-    Divider(color = Color(0xFFE2E8F0), thickness = 0.5.dp)
 }
 
 @Composable
@@ -186,7 +211,7 @@ private fun MessageList(
 ) {
     LazyColumn(
         state = listState,
-        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp),
+        modifier = modifier.padding(horizontal = 12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         item { Spacer(modifier = Modifier.height(4.dp)) }

@@ -90,7 +90,7 @@ fun RegisterScreen(navController: NavController, authManager: FirebaseAuthManage
                     isLoading = true
                     scope.launch {
                         authManager.register(nickname, password, selectedAvatar).onSuccess {
-                            navController.navigate(Screen.ChatList.route) { popUpTo(Screen.Login.route) { inclusive = true } }
+                            navController.navigate(Screen.Chat.createRoute(com.example.famchat.FAMILY_GROUP_ID, com.example.famchat.FAMILY_GROUP_NAME)) { popUpTo(Screen.Login.route) { inclusive = true } }
                         }.onFailure { errorMessage = it.message ?: "Грешка при регистрация" }
                         isLoading = false
                     }
