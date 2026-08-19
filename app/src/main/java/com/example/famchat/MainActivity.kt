@@ -1,5 +1,6 @@
 package com.example.famchat
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -59,7 +60,7 @@ fun FamChatApp(authManager: FirebaseAuthManager) {
             )
         ) { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
-            val chatName = backStackEntry.arguments?.getString("chatName") ?: ""
+            val chatName = backStackEntry.arguments?.getString("chatName")?.let { Uri.decode(it) } ?: ""
             ChatScreen(navController, authManager, chatId, chatName)
         }
     }
