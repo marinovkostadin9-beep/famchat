@@ -79,3 +79,17 @@ fun AvatarGallery(
         }
     }
 }
+
+@Composable
+fun AvatarCircle(resId: Int, size: androidx.compose.ui.unit.Dp) {
+    val option = avatarOptions.find { it.resId == resId } ?: avatarOptions[0]
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(option.bgColor.copy(alpha = 0.2f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(option.emoji, fontSize = (size.value * 0.55f).sp)
+    }
+}

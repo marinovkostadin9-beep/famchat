@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.famchat.FAMILY_GROUP_ID
 import com.example.famchat.R
+import com.example.famchat.ui.components.AvatarCircle
 import com.example.famchat.data.FirebaseAuthManager
 import com.example.famchat.model.Message
 import com.example.famchat.model.User
@@ -289,12 +290,7 @@ private fun MemberRail(members: List<User>, myUserId: String, onMemberClick: (Us
                     .then(if (!isMe) Modifier.clickable { onMemberClick(member) } else Modifier)
             ) {
                 Box {
-                    Image(
-                        painter = painterResource(id = avatarResOrDefault(member.avatarResId)),
-                        contentDescription = member.nickname,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(38.dp).clip(CircleShape)
-                    )
+                    AvatarCircle(resId = member.avatarResId, size = 38.dp)
                     Box(
                         modifier = Modifier
                             .size(10.dp)
@@ -323,12 +319,7 @@ private fun MessageBubble(message: Message, isMine: Boolean, chatType: String) {
         verticalAlignment = Alignment.Bottom
     ) {
         if (!isMine) {
-            Image(
-                painter = painterResource(id = avatarResOrDefault(message.senderAvatarResId)),
-                contentDescription = message.senderName,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(26.dp).clip(CircleShape)
-            )
+            AvatarCircle(resId = message.senderAvatarResId, size = 26.dp)
             Spacer(modifier = Modifier.width(6.dp))
         }
         Column(
